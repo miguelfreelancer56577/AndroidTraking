@@ -25,9 +25,9 @@
             </intent-filter>
         </activity>
         
-        <service
-            android:name="com.example.testtraking.GPSTracker"
-            android:exported="false"></service>
+<!--         <service -->
+<!--             android:name="com.example.testtraking.GPSTracker" -->
+<!--             android:exported="false"></service> -->
         
     </application>
 

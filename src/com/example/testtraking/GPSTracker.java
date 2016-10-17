@@ -151,6 +151,9 @@ public abstract  class GPSTracker implements LocationListener {
         if (location != null) {
             latitude = location.getLatitude();
             longitude = location.getLongitude();
+        }else{
+        	latitude = 0;
+            longitude = 0;
         }
 
     }
@@ -160,6 +163,9 @@ public abstract  class GPSTracker implements LocationListener {
         if (location != null) {
             latitude = location.getLatitude();
             longitude = location.getLongitude();
+        }else{
+        	latitude = 0;
+            longitude = 0;
         }
     }
 

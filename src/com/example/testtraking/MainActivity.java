@@ -107,7 +107,11 @@ public class MainActivity extends ActionBarActivity implements
 		btn.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				actualizarPosicion();
+				//actualizarPosicion();
+				Tracking tracking = new Tracking(MainActivity.this, 15000, 0, longitud, latitud);
+				tracking.runLocationTracking();
+				latitud.setText("Latitud: " + String.valueOf(tracking.getLatitude()));
+				longitud.setText("Longitud: " + String.valueOf(tracking.getLongitude()));
 			} 
 		});
 		
