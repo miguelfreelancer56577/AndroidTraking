@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
-import android.app.IntentService;
+import android.app.AlertDialog;
+import android.app.Service;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
@@ -14,145 +16,73 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.util.Log;
 
-public class GPSTracker extends IntentService implements LocationListener {
-    // TODO: setup
+/**
+ * Created by @moizest89 in SV on 8/19/15.
+ */
 
-    //get context
-    private Context context;
 
-    // log name
-    private final String TAG = "mgps";
+public abstract  class GPSTracker implements LocationListener {
 
-    //actions
-    public static final String ACTION_RUN_ISERVICE = "run";
+    // Get Class Name
+    private static String TAG = "GPSTracker";
+
+    protected Context context;
 
     // flag for GPS Status
-    protected boolean isGPSEnabled = false;
+    private boolean isGPSEnabled = false;
 
     // flag for network status
-    protected boolean isNetworkEnabled = false;
+    private boolean isNetworkEnabled = false;
 
     // flag for GPS Tracking is enabled
-    protected boolean isGPSTrackingEnabled = false;
+    private boolean isGPSTrackingEnabled = false;
 
     protected Location location;
-    protected double latitude;
-    protected double longitude;
+    private double latitude;
+    private double longitude;
 
     // How many Geocoder should return our GPSTracker
-    protected int geocoderMaxResults = 1;
+    private int geocoderMaxResults;
 
     // The minimum distance to change updates in meters
-    protected long minDistanceChangeForUpdates; // 10 meters
+    private long minDistance; 
 
     // The minimum time between updates in milliseconds
-    protected long minTimeBwUpdates;
+    private long minTime;
 
     // Declaring a Location Manager
     protected LocationManager locationManager;
 
     // Store LocationManager.GPS_PROVIDER or LocationManager.NETWORK_PROVIDER information
-    protected String provider_info;
+    private String provider_info;
 
-    public GPSTracker() {
-        super("GPSTracker");
-        //context = this.getApplicationContext();
+    public GPSTracker(Context context) {
+        this.context = context;
+        this.minDistance = 0;
+        this.minTime = 0;
+        this.provider_info = null;
+        this.geocoderMaxResults = 1;
     }
 
-    public GPSTracker(long minDistanceChangeForUpdates, long minTimeBwUpdates, int geocoderMaxResults) {
-        this();
-        this.geocoderMaxResults = geocoderMaxResults;
-        this.minDistanceChangeForUpdates = minDistanceChangeForUpdates;
-        this.minTimeBwUpdates = minTimeBwUpdates;
+    public GPSTracker(Context context, long minDistance, long minTime) {
+        this(context);
+        this.minDistance = minDistance;
+        this.minTime = minTime;
     }
 
-    public GPSTracker(Context context, long minDistanceChangeForUpdates, long minTimeBwUpdates, int geocoderMaxResults) {
-        super("GPSTracker");
-        //this.context = context;
-        this.geocoderMaxResults = geocoderMaxResults;
-        this.minDistanceChangeForUpdates = minDistanceChangeForUpdates;
-        this.minTimeBwUpdates = minTimeBwUpdates;
-    }
-
-    public GPSTracker(long minDistanceChangeForUpdates, long minTimeBwUpdates) {
-        super("GPSTracker");
-        this.minTimeBwUpdates = minTimeBwUpdates;
-        this.minDistanceChangeForUpdates = minDistanceChangeForUpdates;
-    }
-
-    /**
-     * GPSTracker latitude getter and setter
-     *
-     * @return latitude
-     */
-    public double getLatitude() {
-        if (location != null) {
-            latitude = location.getLatitude();
-        }
-
-        return latitude;
-    }
-
-    /**
-     * GPSTracker longitude getter and setter
-     *
-     * @return
-     */
-    public double getLongitude() {
-        if (location != null) {
-            longitude = location.getLongitude();
-        }
-
-        return longitude;
-    }
-
-    /**
-     * GPSTracker isGPSTrackingEnabled getter.
-     * Check GPS/wifi is enabled
-     */
-    public boolean getIsGPSTrackingEnabled() {
-        return this.isGPSTrackingEnabled;
-    }
-
-    public long getMinDistanceChangeForUpdates() {
-        return minDistanceChangeForUpdates;
-    }
-
-    public void setMinDistanceChangeForUpdates(long minDistanceChangeForUpdates) {
-        this.minDistanceChangeForUpdates = minDistanceChangeForUpdates;
-    }
-
-    public long getMinTimeBwUpdates() {
-        return minTimeBwUpdates;
-    }
-
-    public void setMinTimeBwUpdates(long minTimeBwUpdates) {
-        this.minTimeBwUpdates = minTimeBwUpdates;
-    }
-
-    public int getGeocoderMaxResults() {
-        return geocoderMaxResults;
-    }
-
-    public void setGeocoderMaxResults(int geocoderMaxResults) {
+    public GPSTracker(Context context, long minDistance, long minTime, int geocoderMaxResults) {
+        this(context);
+        this.minDistance = minDistance;
+        this.minTime = minTime;
         this.geocoderMaxResults = geocoderMaxResults;
     }
 
-    @Override
-    protected void onHandleIntent(Intent intent) {
-        if (intent != null) {
-            final String action = intent.getAction();
-            if (ACTION_RUN_ISERVICE.equals(action)) {
-                runTraking();
-            }
-        }
-    }
-
-    protected void runTraking() {
+    public void runLocationTracking(){
         try {
-            locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+            locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
 
             //getting GPS status
             isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
@@ -187,58 +117,192 @@ public class GPSTracker extends IntentService implements LocationListener {
                 provider_info = LocationManager.NETWORK_PROVIDER;
 
             }
+      
+                    
 
             // Application can use GPS or Network Provider
             if (provider_info != null) {
-
-            	Log.d(TAG, "request location");
-
-                locationManager.requestLocationUpdates( provider_info, minTimeBwUpdates, minDistanceChangeForUpdates, this );
-
-                if (locationManager != null) {
-                	Log.d(TAG, "get first location ");
-                    location = locationManager.getLastKnownLocation(provider_info);
-                    getLocation(location);
-                }
+            	
+            	location = locationManager.getLastKnownLocation(provider_info);
+                getLocation();
+            	
+            	locationManager.requestLocationUpdates(
+                        provider_info,
+                        minTime,
+                        minDistance,
+                        GPSTracker.this
+                );
+            	
             }
-        } catch (SecurityException e) {
-            Log.e(TAG, "Impossible to connect to LocationManager", e);
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             //e.printStackTrace();
             Log.e(TAG, "Impossible to connect to LocationManager", e);
         }
+}
 
-    }
 
     /**
      * Try to get my current location by GPS or Network Provider
      */
+    public void getLocation() {
+
+        if (location != null) {
+            latitude = location.getLatitude();
+            longitude = location.getLongitude();
+        }
+
+    }
+
     public void getLocation(Location location) {
+        this.location = location;
         if (location != null) {
             latitude = location.getLatitude();
             longitude = location.getLongitude();
         }
     }
 
+    /**
+     * Update GPSTracker latitude and longitude
+     */
+    
+
+    /**
+     * GPSTracker latitude getter and setter
+     * @return latitude
+     */
+    public double getLatitude() {
+        if (location != null) {
+            latitude = location.getLatitude();
+        }
+
+        return latitude;
+    }
+
+    /**
+     * GPSTracker longitude getter and setter
+     * @return
+     */
+    public double getLongitude() {
+        if (location != null) {
+            longitude = location.getLongitude();
+        }
+
+        return longitude;
+    }
+
+    /**
+     * GPSTracker isGPSTrackingEnabled getter.
+     * Check GPS/wifi is enabled
+     */
+    public boolean getIsGPSTrackingEnabled() {
+
+        return this.isGPSTrackingEnabled;
+    }
+    
+    /**
+     * GPSTracker getGeocoderMaxResults getter.
+     * @return concurrent geocoderMaxResults
+     */
+    public int getGeocoderMaxResults() {
+		return geocoderMaxResults;
+	}
+
+    /**
+     * GPSTracker getGeocoderMaxResults setter.
+     * @param geocoderMaxResults
+     * @return concurrent geocoderMaxResults
+     */
+	public void setGeocoderMaxResults(int geocoderMaxResults) {
+		this.geocoderMaxResults = geocoderMaxResults;
+	}
+	
+	/**
+     * GPSTracker getMinDistance getter.
+     * @return concurrent minDistance
+     */
+	public long getMinDistance() {
+		return minDistance;
+	}
+	
+	/**
+     * GPSTracker setMinDistance setter.
+     * @param minDistance
+     * @return concurrent minDistance
+     */
+	public void setMinDistance(long minDistance) {
+		this.minDistance = minDistance;
+	}
+	
+	/**
+     * GPSTracker getMinTime getter.
+     * @return concurrent minTime
+     */
+	public long getMinTime() {
+		return minTime;
+	}
+
+	/**
+     * GPSTracker setMinTime setter.
+     * @param minTime
+     * @return concurrent minTime
+     */
+	public void setMinTime(long minTime) {
+		this.minTime = minTime;
+	}
+
+	/**
+     * Stop using GPS listener
+     * Calling this method will stop using GPS in your app
+     */
     public void stopUsingGPS() {
         if (locationManager != null) {
-            try {
-                locationManager.removeUpdates(GPSTracker.this);
-            } catch (SecurityException e) {
-                Log.e(TAG, "ERROR to stop GPS", e);
-            } catch (Exception e) {
-                //e.printStackTrace();
-                Log.e(TAG, "ERROR to stop GPS", e);
-            }
+            locationManager.removeUpdates(GPSTracker.this);
         }
     }
 
     /**
+     * Function to show settings alert dialog
+     */
+    public void showSettingsAlert() {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(context);
+
+        //Setting Dialog Title
+        alertDialog.setTitle("Settings");
+
+        //Setting Dialog Message
+        alertDialog.setMessage("Show settings of gps");
+
+        //On Pressing Setting button
+        alertDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which)
+            {
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                context.startActivity(intent);
+            }
+        });
+
+        //On pressing cancel button
+        alertDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which)
+            {
+                dialog.cancel();
+            }
+        });
+
+        alertDialog.show();
+    }
+
+    /**
      * Get list of address by latitude and longitude
-     *
      * @return null or List<Address>
      */
-    public List<Address> getGeocoderAddress() {
+    public List<Address> getGeocoderAddress( ) {
         if (location != null) {
 
             Geocoder geocoder = new Geocoder(context, Locale.ENGLISH);
@@ -262,7 +326,6 @@ public class GPSTracker extends IntentService implements LocationListener {
 
     /**
      * Try to get AddressLine
-     *
      * @return null or addressLine
      */
     public String getAddressLine() {
@@ -280,10 +343,9 @@ public class GPSTracker extends IntentService implements LocationListener {
 
     /**
      * Try to get Locality
-     *
      * @return null or locality
      */
-    public String getLocality() {
+    public String getLocality( ) {
         List<Address> addresses = getGeocoderAddress();
 
         if (addresses != null && addresses.size() > 0) {
@@ -291,17 +353,17 @@ public class GPSTracker extends IntentService implements LocationListener {
             String locality = address.getLocality();
 
             return locality;
-        } else {
+        }
+        else {
             return null;
         }
     }
 
     /**
      * Try to get Postal Code
-     *
      * @return null or postalCode
      */
-    public String getPostalCode() {
+    public String getPostalCode( ) {
         List<Address> addresses = getGeocoderAddress();
 
         if (addresses != null && addresses.size() > 0) {
@@ -316,10 +378,9 @@ public class GPSTracker extends IntentService implements LocationListener {
 
     /**
      * Try to get CountryName
-     *
      * @return null or postalCode
      */
-    public String getCountryName() {
+    public String getCountryName( ) {
         List<Address> addresses = getGeocoderAddress();
         if (addresses != null && addresses.size() > 0) {
             Address address = addresses.get(0);
@@ -331,39 +392,4 @@ public class GPSTracker extends IntentService implements LocationListener {
         }
     }
 
-    @Override
-    public void onDestroy() {
-        stopUsingGPS();
-        Log.i(TAG, "Service destroyed");
-    }
-
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        this.location = location;
-        getLocation(this.location);
-        Log.i(TAG, "Tracking...");
-        Log.i(TAG, "Longitud: " + this.longitude + " Latitud: " + this.latitude);
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-        Log.i(TAG, "Provider Status: " + status);
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-        Log.i(TAG, "Provider ON");
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-        Log.i(TAG, "Provider OFF");
-    }
 }
-

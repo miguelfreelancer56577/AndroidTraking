@@ -56,9 +56,9 @@ public class MainActivity extends ActionBarActivity implements
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.fragment_main);
 		
-		Intent intent = new Intent(this, GPSTracker.class);
+		/*Intent intent = new Intent(this, GPSTracker.class);
         intent.setAction(GPSTracker.ACTION_RUN_ISERVICE);
-        startService(intent);
+        startService(intent);*/
 
 
 		// Set up the action bar.
