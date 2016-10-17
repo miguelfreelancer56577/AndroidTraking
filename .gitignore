@@ -1,0 +1,7 @@
+# === This is a sample of .gitignore file ===  
+# Ignore temp files  
+/bin
+*.class
+*.jar
+*.dex
+*.apk
