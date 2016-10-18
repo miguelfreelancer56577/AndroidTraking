@@ -15,6 +15,11 @@ public class Tracking extends GPSTracker{
 	 * call super constructor
 	 * @param context
 	 */
+	
+	public Tracking(Context context, long minDistance, long minTime) {
+		super(context, minDistance, minTime);
+	}
+	
 	public Tracking(Context context, long minDistance, long minTime,TextView longitud,TextView latitud) {
 		super(context, minDistance, minTime);
 		this.longitud = longitud;
@@ -58,4 +63,5 @@ public class Tracking extends GPSTracker{
 	public void onStatusChanged(String provider, int status,Bundle extras){
 		Log.i("gps", "Provider Status: " + status);
 	}
+	
 }
